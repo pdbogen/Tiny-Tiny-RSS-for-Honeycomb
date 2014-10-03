@@ -344,7 +344,8 @@ public class OfflineHeadlinesFragment extends Fragment implements OnItemClickLis
 			//
 		}
 		
-		String orderBy = (m_prefs.getBoolean("offline_oldest_first", false)) ? "updated" : "updated DESC";
+
+		String orderBy = m_activity.getSortMode().equals(getResources().obtainTypedArray( R.array.pref_sort_mode_values ).getString(0)) ? "updated" : "updated DESC";
 		
 		if (m_searchQuery == null || m_searchQuery.equals("")) {
 			return m_activity.getReadableDb().query("articles LEFT JOIN feeds ON (feed_id = feeds."+BaseColumns._ID+")", 

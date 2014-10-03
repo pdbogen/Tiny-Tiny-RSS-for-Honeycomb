@@ -92,11 +92,13 @@
             android:key="headlines_show_content"
             android:summary="@string/pref_headlines_show_content_long"
             android:title="@string/pref_headlines_show_content" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="oldest_first"
-            android:summary="@string/requires_api5"
-            android:title="@string/offline_oldest_first" />
+        <ListPreference
+            android:defaultValue="NEWEST"
+            android:entries="@array/pref_sort_mode_names"
+            android:entryValues="@array/pref_sort_mode_values"
+            android:key="default_sort_mode"
+            android:summary="@string/pref_default_view_mode_long"
+            android:title="@string/pref_default_view_mode" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="headlines_mark_read_scroll"

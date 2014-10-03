@@ -64,7 +64,12 @@
                 android:id="@+id/headlines_view_mode"
                 android:showAsAction=""
                 android:title="@string/headlines_view_mode"/>
-            
+
+            <item
+                android:id="@+id/headlines_sort_mode"
+                android:showAsAction=""
+                android:title="@string/headlines_sort_mode"/>
+
             <item
                 android:id="@+id/headlines_toggle_sidebar"
                 android:showAsAction=""

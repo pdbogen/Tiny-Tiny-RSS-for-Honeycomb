@@ -31,6 +31,8 @@
     <string name="ssl_trust_any">Accept any certificate</string>
     <string name="category_browse_feeds">Browse feeds</string>
     <string name="category_browse_articles">Browse articles</string>
+    <string name="category_sort_oldest">Browse oldest-first</string>
+    <string name="category_sort_newest">Browse newest-first</string>
     <string name="blank"></string>
     <string name="transport_debugging">Log sent and received data</string>
     <string name="article_toggle_marked">(Un)Star</string>
@@ -187,6 +189,10 @@
     <string name="headlines_starred">Starred</string>
     <string name="headlines_published">Published</string>
     <string name="headlines_unread">Unread</string>
+    <string name="headlines_sort_mode">Set sort mode</string>
+    <string name="headlines_set_sort_mode">Set sort mode</string>
+    <string name="headlines_sort_oldest">Oldest First</string>
+    <string name="headlines_sort_newest">Newest First</string>
     <string name="article_img_open">Open image</string>
     <string name="article_img_share">Share image</string>
     <string name="requires_api5">Requires tt-rss 1.7.6</string>

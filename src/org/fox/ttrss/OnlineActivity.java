@@ -823,6 +823,38 @@ public class OnlineActivity extends CommonActivity {
 				}
 			}
 			return true;
+		case R.id.headlines_sort_mode:
+			if( hf != null ) {
+				Dialog dialog = new Dialog(this);
+				String sortMode = getSortMode();
+				//Log.d(TAG, "viewMode:" + getViewMode());
+
+				int selectedIndex = 0;
+				if( sortMode.equals( getResources().obtainTypedArray( R.array.pref_sort_mode_values ).getString( 1 ) ) ) {
+					selectedIndex = 1;
+				}
+
+				AlertDialog.Builder builder = new AlertDialog.Builder(this)
+						.setTitle(R.string.headlines_set_sort_mode)
+						.setSingleChoiceItems(
+								new String[] {
+										getString(R.string.headlines_sort_oldest),
+										getString(R.string.headlines_sort_newest) },
+								selectedIndex, new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										setSortMode( getResources().obtainTypedArray( R.array.pref_sort_mode_values ).getString( which ) );
+										dialog.cancel();
+										refresh();
+									}
+								});
+
+				dialog = builder.create();
+				dialog.show();
+
+			}
+			return true;
 		case R.id.headlines_view_mode:
 			if (hf != null) {
 				Dialog dialog = new Dialog(this);
@@ -1743,6 +1775,16 @@ public class OnlineActivity extends CommonActivity {
 			loginFailure();
 		}
 
+	}
+
+	public void setSortMode( String sortMode ) {
+		SharedPreferences.Editor editor = m_prefs.edit();
+		editor.putString( "sort_mode", sortMode );
+		editor.commit();
+	}
+
+	public String getSortMode() {
+		return m_prefs.getString( "sort_mode", "date_reverse" );
 	}
 
 	public void setViewMode(String viewMode) {
