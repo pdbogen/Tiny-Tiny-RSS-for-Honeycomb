@@ -1,3 +1,12 @@
+This Fork
+=========
+
+This is a fork of the upstream Tiny Tiny RSS Android client that removes trial
+code.
+
+I contribute to Andrew's Patreon. If you enjoy using the software he has
+written, I encourage you to do so, as well.
+
 Tiny Tiny RSS client for Android
 ================================
 
