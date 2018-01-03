@@ -55,13 +55,11 @@ import java.util.List;
 public class OnlineActivity extends CommonActivity {
 	private final String TAG = this.getClass().getSimpleName();
 
-	private final static int TRIAL_DAYS = 8;
-	
 	protected SharedPreferences m_prefs;
 	protected Menu m_menu;
 
     protected boolean m_forceDisableActionMode = false;
-	
+
 	private ActionMode m_headlinesActionMode;
 	private HeadlinesActionModeCallback m_headlinesActionModeCallback;
 
@@ -82,16 +80,16 @@ public class OnlineActivity extends CommonActivity {
 			}
 		}
 	};
-	
-	
+
+
 	@TargetApi(11)
 	private class HeadlinesActionModeCallback implements ActionMode.Callback {
-		
+
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			return false;
 		}
-		
+
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
 			m_headlinesActionMode = null;
@@ -106,16 +104,16 @@ public class OnlineActivity extends CommonActivity {
 
             invalidateOptionsMenu();
 		}
-		
+
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 
 			MenuInflater inflater = getMenuInflater();
 			inflater.inflate(R.menu.action_mode_headlines, menu);
-			
+
 			return true;
 		}
-		
+
 		@Override
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			onOptionsItemSelected(item);
@@ -130,11 +128,11 @@ public class OnlineActivity extends CommonActivity {
 	protected void setSessionId(String sessionId) {
 		Application.getInstance().m_sessionId = sessionId;
 	}
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		ApiCommon.disableConnectionReuseIfNecessary();
-		
+
 		// we use that before parent onCreate so let's init locally
 		m_prefs = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
@@ -175,10 +173,8 @@ public class OnlineActivity extends CommonActivity {
 		}
 
 		if (isOffline) {
-			switchOfflineSuccess();			
+			switchOfflineSuccess();
 		} else {
-			checkTrial(false);
-			
 			m_headlinesActionModeCallback = new HeadlinesActionModeCallback();
 		}
 	}
@@ -215,7 +211,7 @@ public class OnlineActivity extends CommonActivity {
 		AlertDialog dlg = builder.create();
 		dlg.show();
 	}
-	
+
 
 	@Override
 	public void onPause() {
@@ -227,7 +223,7 @@ public class OnlineActivity extends CommonActivity {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
@@ -235,11 +231,11 @@ public class OnlineActivity extends CommonActivity {
 
 	private void syncOfflineData() {
 		Log.d(TAG, "offlineSync: starting");
-		
+
 		Intent intent = new Intent(
 				OnlineActivity.this,
 				OfflineUploadService.class);
-		
+
 		intent.putExtra("sessionId", getSessionId());
 
 		startService(intent);
@@ -263,7 +259,7 @@ public class OnlineActivity extends CommonActivity {
 
 		finish();
 	}
-	
+
 	public void login() {
 		login(false, null);
 	}
@@ -283,7 +279,7 @@ public class OnlineActivity extends CommonActivity {
 			       .setPositiveButton(R.string.dialog_open_preferences, new DialogInterface.OnClickListener() {
 			           public void onClick(DialogInterface dialog, int id) {
 			   			// launch preferences
-			   			
+
 			        	   Intent intent = new Intent(OnlineActivity.this,
 			        			   PreferencesActivity.class);
 			        	   startActivityForResult(intent, 0);
@@ -296,10 +292,10 @@ public class OnlineActivity extends CommonActivity {
 			       });
 			AlertDialog alert = builder.create();
 			alert.show();
-			
+
 		} else {
 			setLoadingStatus(R.string.login_in_progress);
-			
+
 			LoginRequest ar = new LoginRequest(getApplicationContext(), refresh, listener);
 
 			HashMap<String, String> map = new HashMap<String, String>() {
@@ -315,93 +311,32 @@ public class OnlineActivity extends CommonActivity {
 			setLoadingStatus(R.string.login_in_progress);
 		}
 	}
-	
+
 	protected void loginSuccess(boolean refresh) {
 		setLoadingStatus(R.string.blank);
-		
+
 		initMenu();
-	
+
 		Intent intent = new Intent(OnlineActivity.this, MasterActivity.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
- 	   
+
 		startActivityForResult(intent, 0);
 		overridePendingTransition(0, 0);
 
 		if (getDatabaseHelper().hasPendingOfflineData())
 			syncOfflineData();
-		
+
 		finish();
 	}
-	
-	public void checkTrial(boolean notify) {
-        if (!BuildConfig.DEBUG) {
 
-            boolean isTrial = getPackageManager().checkSignatures(
-                    getPackageName(), "org.fox.ttrss.key") != PackageManager.SIGNATURE_MATCH;
-
-            if (isTrial) {
-                long firstStart = m_prefs.getLong("date_firstlaunch_trial", -1);
-
-                if (firstStart == -1) {
-                    firstStart = System.currentTimeMillis();
-
-                    SharedPreferences.Editor editor = m_prefs.edit();
-                    editor.putLong("date_firstlaunch_trial", firstStart);
-					editor.apply();
-                }
-
-                if (!notify && System.currentTimeMillis() > firstStart + (TRIAL_DAYS * 24 * 60 * 60 * 1000)) {
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                            .setTitle(R.string.trial_expired)
-                            .setMessage(R.string.trial_expired_message)
-                            .setCancelable(false)
-                            .setPositiveButton(getString(R.string.trial_purchase),
-                                    new OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog,
-                                                            int which) {
-
-                                            openUnlockUrl();
-                                            finish();
-
-                                        }
-                                    })
-                            .setNegativeButton(getString(R.string.cancel),
-                                    new OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog,
-                                                            int which) {
-
-                                            finish();
-
-                                        }
-                                    });
-
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-
-                } else {
-                    int daysLeft = Math.round((firstStart + (TRIAL_DAYS * 24 * 60 * 60 * 1000) - System.currentTimeMillis()) / (24 * 60 * 60 * 1000));
-
-                    if (notify) {
-                        toast(getResources().getQuantityString(R.plurals.trial_mode_prompt, daysLeft, daysLeft));
-                    }
-                }
-            } else if (notify) {
-                //toast(R.string.trial_thanks);
-            }
-        }
-	}
-	
 	private void openUnlockUrl() {
 		try {
-			Intent intent = new Intent(Intent.ACTION_VIEW, 
+			Intent intent = new Intent(Intent.ACTION_VIEW,
 				Uri.parse("market://details?id=org.fox.ttrss.key"));
 			startActivity(intent);
 		} catch (ActivityNotFoundException ae) {
 			try {
-				Intent intent = new Intent(Intent.ACTION_VIEW, 
+				Intent intent = new Intent(Intent.ACTION_VIEW,
 					Uri.parse("https://play.google.com/store/apps/details?id=org.fox.ttrss.key"));
 				startActivity(intent);
 			} catch (Exception e) {
@@ -410,14 +345,14 @@ public class OnlineActivity extends CommonActivity {
 			}
 		}
 	}
-	
+
 	@Override
 	public boolean onContextItemSelected(android.view.MenuItem item) {
 		/* AdapterContextMenuInfo info = (AdapterContextMenuInfo) item
 				.getMenuInfo(); */
-		
+
 		final ArticlePager ap = (ArticlePager)getSupportFragmentManager().findFragmentByTag(FRAG_ARTICLE);
-		
+
 		switch (item.getItemId()) {
 		case R.id.article_img_open:
 			if (getLastContentImageHitTestUrl() != null) {
@@ -427,12 +362,12 @@ public class OnlineActivity extends CommonActivity {
 					e.printStackTrace();
 					toast(R.string.error_other_error);
 				}
-			}			
+			}
 			return true;
 		case R.id.article_img_copy:
 			if (getLastContentImageHitTestUrl() != null) {
 				copyToClipboard(getLastContentImageHitTestUrl());
-			}			
+			}
 			return true;
 		case R.id.article_img_share:
 			if (getLastContentImageHitTestUrl() != null) {
@@ -459,7 +394,7 @@ public class OnlineActivity extends CommonActivity {
 			return super.onContextItemSelected(item);
 		}
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		final HeadlinesFragment hf = (HeadlinesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_HEADLINES);
@@ -473,15 +408,15 @@ public class OnlineActivity extends CommonActivity {
 		case R.id.toggle_attachments:
 			if (true) {
 				Article article = ap.getSelectedArticle();
-				
+
 				if (article != null && article.attachments != null && article.attachments.size() > 0) {
 					CharSequence[] items = new CharSequence[article.attachments.size()];
 					final CharSequence[] itemUrls = new CharSequence[article.attachments.size()];
 
 					for (int i = 0; i < article.attachments.size(); i++) {
-						items[i] = article.attachments.get(i).title != null ? article.attachments.get(i).content_url : 
+						items[i] = article.attachments.get(i).title != null ? article.attachments.get(i).content_url :
 							article.attachments.get(i).content_url;
-						
+
 						itemUrls[i] = article.attachments.get(i).content_url;
 					}
 
@@ -494,25 +429,25 @@ public class OnlineActivity extends CommonActivity {
 								public void onClick(DialogInterface dialog, int which) {
 									//
 								}
-							}).setNeutralButton(R.string.attachment_copy, new OnClickListener() {								
+							}).setNeutralButton(R.string.attachment_copy, new OnClickListener() {
 								@Override
 								public void onClick(DialogInterface dialog, int which) {
 									int selectedPosition = ((AlertDialog)dialog).getListView().getCheckedItemPosition();
-									
+
 									copyToClipboard((String)itemUrls[selectedPosition]);
 								}
 							}).setPositiveButton(R.string.attachment_view, new OnClickListener() {
-								
+
 								@Override
 								public void onClick(DialogInterface dialog, int id) {
 									int selectedPosition = ((AlertDialog)dialog).getListView().getCheckedItemPosition();
-									
+
 									openUri(Uri.parse((String)itemUrls[selectedPosition]));
 
 									dialog.cancel();
 								}
 							}).setNegativeButton(R.string.dialog_cancel, new OnClickListener() {
-								
+
 								@Override
 								public void onClick(DialogInterface dialog, int id) {
 									dialog.cancel();
@@ -540,7 +475,7 @@ public class OnlineActivity extends CommonActivity {
 			return true;*/
 		case R.id.article_set_note:
 			if (ap != null && ap.getSelectedArticle() != null) {
-				editArticleNote(ap.getSelectedArticle());				
+				editArticleNote(ap.getSelectedArticle());
 			}
 			return true;
 		case R.id.preferences:
@@ -548,7 +483,7 @@ public class OnlineActivity extends CommonActivity {
 					PreferencesActivity.class);
 			startActivityForResult(intent, 0);
 			return true;
-		case R.id.search:			
+		case R.id.search:
 			if (hf != null) {
 				Dialog dialog = new Dialog(this);
 
@@ -562,9 +497,9 @@ public class OnlineActivity extends CommonActivity {
 									@Override
 									public void onClick(DialogInterface dialog,
 											int which) {
-										
+
 										String query = edit.getText().toString().trim();
-										
+
 										hf.setSearchQuery(query);
 
 									}
@@ -575,23 +510,23 @@ public class OnlineActivity extends CommonActivity {
 									@Override
 									public void onClick(DialogInterface dialog,
 											int which) {
-										
+
 										//
 
 									}
 								}).setView(edit);
-				
+
 				dialog = builder.create();
 				dialog.show();
 			}
 			return true;
 		case R.id.headlines_mark_as_read:
 			if (hf != null) {
-				
+
 				int count = hf.getUnreadArticles().size();
-				
+
 				boolean confirm = m_prefs.getBoolean("confirm_headlines_catchup", true);
-				
+
 				if (count > 0) {
 					if (confirm) {
 						AlertDialog.Builder builder = new AlertDialog.Builder(
@@ -601,19 +536,19 @@ public class OnlineActivity extends CommonActivity {
 										new Dialog.OnClickListener() {
 											public void onClick(DialogInterface dialog,
 													int which) {
-	
-												catchupVisibleArticles();											
-												
+
+												catchupVisibleArticles();
+
 											}
 										})
 								.setNegativeButton(R.string.dialog_cancel,
 										new Dialog.OnClickListener() {
 											public void onClick(DialogInterface dialog,
 													int which) {
-		
+
 											}
 										});
-		
+
 						AlertDialog dlg = builder.create();
 						dlg.show();
 					} else {
@@ -625,13 +560,13 @@ public class OnlineActivity extends CommonActivity {
 		case R.id.headlines_view_mode:
 			if (hf != null) {
 				Dialog dialog = new Dialog(this);
-				
+
 				String viewMode = getViewMode();
-				
+
 				//Log.d(TAG, "viewMode:" + getViewMode());
 
 				int selectedIndex = 0;
-				
+
 				if (viewMode.equals("all_articles")) {
 					selectedIndex = 1;
 				} else if (viewMode.equals("marked")) {
@@ -641,7 +576,7 @@ public class OnlineActivity extends CommonActivity {
 				} else if (viewMode.equals("unread")) {
 					selectedIndex = 4;
 				}
-				
+
 				AlertDialog.Builder builder = new AlertDialog.Builder(this)
 						.setTitle(R.string.headlines_set_view_mode)
 						.setSingleChoiceItems(
@@ -834,11 +769,11 @@ public class OnlineActivity extends CommonActivity {
 		case R.id.set_labels:
 			if (ap != null && ap.getSelectedArticle() != null) {
 				if (getApiLevel() != 7) {
-					editArticleLabels(ap.getSelectedArticle());					
+					editArticleLabels(ap.getSelectedArticle());
 				} else {
 					toast(R.string.server_function_not_available);
-				}				
-								
+				}
+
 			}
 			return true;
 		/*case R.id.update_headlines:
@@ -878,13 +813,13 @@ public class OnlineActivity extends CommonActivity {
 
 	protected void catchupVisibleArticles() {
 		final HeadlinesFragment hf = (HeadlinesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_HEADLINES);
-		
+
 		if (hf != null) {
 			ArticleList articles = hf.getUnreadArticles();
-			
+
 			for (Article a : articles)
 				a.unread = false;
-	
+
 			ApiRequest req = new ApiRequest(getApplicationContext()) {
 				protected void onPostExecute(JsonElement result) {
 					if (hf.isAdded()) {
@@ -892,9 +827,9 @@ public class OnlineActivity extends CommonActivity {
 					}
 				}
 			};
-	
+
 			final String articleIds = articlesToIdString(articles);
-	
+
 			@SuppressWarnings("serial")
 			HashMap<String, String> map = new HashMap<String, String>() {
 				{
@@ -911,40 +846,40 @@ public class OnlineActivity extends CommonActivity {
 
 	public void editArticleNote(final Article article) {
 		String note = "";
-		
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);  
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(article.title);
 		final EditText topicEdit = new EditText(this);
 		topicEdit.setText(note);
 		builder.setView(topicEdit);
-		
+
 		builder.setPositiveButton(R.string.article_set_note, new Dialog.OnClickListener() {
 	        public void onClick(DialogInterface dialog, int which) {
 	        	String note = topicEdit.getText().toString().trim();
-	        	
+
 	        	saveArticleNote(article, note);
-	        	article.published = true;	
+	        	article.published = true;
 	        	article.note = note;
-	        	
+
 	        	saveArticlePublished(article);
-	        	
+
 	        	HeadlinesFragment hf = (HeadlinesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_HEADLINES);
 	        	if (hf != null) hf.notifyUpdated();
 	        }
 	    });
-		
+
 		builder.setNegativeButton(R.string.dialog_cancel, new Dialog.OnClickListener() {
 	        public void onClick(DialogInterface dialog, int which) {
 	        	//
 	        }
 	    });
-		
+
 		AlertDialog dialog = builder.create();
 		dialog.show();
 	}
-	
+
 	public void editArticleLabels(Article article) {
-		final int articleId = article.id;									
+		final int articleId = article.id;
 
 		ApiRequest req = new ApiRequest(getApplicationContext()) {
 			@Override
@@ -956,22 +891,22 @@ public class OnlineActivity extends CommonActivity {
 					CharSequence[] items = new CharSequence[labels.size()];
 					final int[] itemIds = new int[labels.size()];
 					boolean[] checkedItems = new boolean[labels.size()];
-					
+
 					for (int i = 0; i < labels.size(); i++) {
 						items[i] = labels.get(i).caption;
 						itemIds[i] = labels.get(i).id;
 						checkedItems[i] = labels.get(i).checked;
 					}
-					
+
 					Dialog dialog = new Dialog(OnlineActivity.this);
 					AlertDialog.Builder builder = new AlertDialog.Builder(OnlineActivity.this)
 							.setTitle(R.string.article_set_labels)
 							.setMultiChoiceItems(items, checkedItems, new OnMultiChoiceClickListener() {
-								
+
 								@Override
 								public void onClick(DialogInterface dialog, int which, final boolean isChecked) {
 									final int labelId = itemIds[which];
-									
+
 									@SuppressWarnings("serial")
 									HashMap<String, String> map = new HashMap<String, String>() {
 										{
@@ -982,13 +917,13 @@ public class OnlineActivity extends CommonActivity {
 											if (isChecked) put("assign", "true");
 										}
 									};
-									
+
 									ApiRequest req = new ApiRequest(m_context);
 									req.execute(map);
-									
+
 								}
 							}).setPositiveButton(R.string.dialog_close, new OnClickListener() {
-								
+
 								@Override
 								public void onClick(DialogInterface dialog, int which) {
 									dialog.cancel();
@@ -1001,7 +936,7 @@ public class OnlineActivity extends CommonActivity {
 				}
 			}
 		};
-		
+
 		@SuppressWarnings("serial")
 		HashMap<String, String> map = new HashMap<String, String>() {
 			{
@@ -1010,7 +945,7 @@ public class OnlineActivity extends CommonActivity {
 				put("article_id", String.valueOf(articleId));
 			}
 		};
-		
+
 		req.execute(map);
 	}
 
@@ -1037,7 +972,7 @@ public class OnlineActivity extends CommonActivity {
 	protected void loginFailure() {
 		setSessionId(null);
 		initMenu();
-		
+
 		if (getDatabaseHelper().hasOfflineData()) {
 
 			AlertDialog.Builder builder = new AlertDialog.Builder(
@@ -1067,32 +1002,32 @@ public class OnlineActivity extends CommonActivity {
 	public void onSaveInstanceState(Bundle out) {
 		super.onSaveInstanceState(out);
 	}
-	
+
 	@Override
 	public void onResume() {
 		super.onResume();
 
 		ApiCommon.trustAllHosts(m_prefs.getBoolean("ssl_trust_any", false),
-				m_prefs.getBoolean("ssl_trust_any_host", false));				
-		
+				m_prefs.getBoolean("ssl_trust_any_host", false));
+
 		IntentFilter filter = new IntentFilter();
 		//filter.addAction(OfflineDownloadService.INTENT_ACTION_SUCCESS);
 		filter.addAction(OfflineUploadService.INTENT_ACTION_SUCCESS);
 		filter.addCategory(Intent.CATEGORY_DEFAULT);
 
 		registerReceiver(m_broadcastReceiver, filter);
-		
+
 		if (getSessionId() == null) {
 			login();
 		} else {
 			loginSuccess(false);
 		}
 	}
-	
+
 	public Menu getMenu() {
 		return m_menu;
 	}
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -1101,7 +1036,7 @@ public class OnlineActivity extends CommonActivity {
 		m_menu = menu;
 
 		initMenu();
-		
+
 		List<PackageInfo> pkgs = getPackageManager()
 				.getInstalledPackages(0);
 
@@ -1112,18 +1047,18 @@ public class OnlineActivity extends CommonActivity {
 				break;
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	public int getApiLevel() {
 		return Application.getInstance().m_apiLevel;
 	}
-	
+
 	protected void setApiLevel(int apiLevel) {
 		Application.getInstance().m_apiLevel = apiLevel;
 	}
-	
+
 	@SuppressWarnings({ "unchecked", "serial" })
 	public void saveArticleUnread(final Article article) {
 		ApiRequest req = new ApiRequest(getApplicationContext()) {
@@ -1163,7 +1098,7 @@ public class OnlineActivity extends CommonActivity {
 				put("field", "0");
 			}
 		};
-		
+
 		req.execute(map);
 	}
 
@@ -1220,7 +1155,7 @@ public class OnlineActivity extends CommonActivity {
 
 		return tmp.replaceAll(",$", "");
 	}
-	
+
 	public void shareArticle(Article article) {
 		if (article != null) {
 			shareText(article.link, article.title);
@@ -1228,14 +1163,14 @@ public class OnlineActivity extends CommonActivity {
 	}
 
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {		
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (m_prefs.getBoolean("use_volume_keys", false)) {
 			ArticlePager ap = (ArticlePager) getSupportFragmentManager().findFragmentByTag(FRAG_ARTICLE);
-			
-			if (ap != null && ap.isAdded()) {			
+
+			if (ap != null && ap.isAdded()) {
 				switch (keyCode) {
 				case KeyEvent.KEYCODE_VOLUME_UP:
-					ap.selectArticle(false);					
+					ap.selectArticle(false);
 					return true;
 				case KeyEvent.KEYCODE_VOLUME_DOWN:
 					ap.selectArticle(true);
@@ -1243,25 +1178,25 @@ public class OnlineActivity extends CommonActivity {
 				}
 			}
 		}
-		
-		return super.onKeyDown(keyCode, event);			
+
+		return super.onKeyDown(keyCode, event);
 	}
-	
+
 	// Handle onKeyUp too to suppress beep
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
 		if (m_prefs.getBoolean("use_volume_keys", false)) {
-					
+
 			switch (keyCode) {
 			case KeyEvent.KEYCODE_VOLUME_UP:
 			case KeyEvent.KEYCODE_VOLUME_DOWN:
 				return true;
 			}
 		}
-		
-		return super.onKeyUp(keyCode, event);		
+
+		return super.onKeyUp(keyCode, event);
 	}
-	
+
 	public void catchupFeed(final Feed feed) {
 		Log.d(TAG, "catchupFeed=" + feed);
 
@@ -1284,7 +1219,7 @@ public class OnlineActivity extends CommonActivity {
 
 		req.execute(map);
 	}
-	
+
 	public void toggleArticlesMarked(final ArticleList articles) {
 		ApiRequest req = new ApiRequest(getApplicationContext());
 
@@ -1336,34 +1271,34 @@ public class OnlineActivity extends CommonActivity {
 
 		req.execute(map);
 	}
-	
-	
+
+
 	protected void initMenu() {
-		if (m_menu != null) {			
+		if (m_menu != null) {
 			if (getSessionId() != null) {
 				m_menu.setGroupVisible(R.id.menu_group_logged_in, true);
 				m_menu.setGroupVisible(R.id.menu_group_logged_out, false);
 			} else {
 				m_menu.setGroupVisible(R.id.menu_group_logged_in, false);
-				m_menu.setGroupVisible(R.id.menu_group_logged_out, true);				
+				m_menu.setGroupVisible(R.id.menu_group_logged_out, true);
 			}
-			
+
 			m_menu.setGroupVisible(R.id.menu_group_headlines, false);
 			m_menu.setGroupVisible(R.id.menu_group_article, false);
 			m_menu.setGroupVisible(R.id.menu_group_feeds, false);
-			
+
 			m_menu.findItem(R.id.set_labels).setEnabled(getApiLevel() >= 1);
 			m_menu.findItem(R.id.article_set_note).setEnabled(getApiLevel() >= 1);
 			m_menu.findItem(R.id.subscribe_to_feed).setEnabled(getApiLevel() >= 5);
-			
+
 			MenuItem search = m_menu.findItem(R.id.search);
 			search.setEnabled(getApiLevel() >= 2);
-			
+
 			ArticlePager ap = (ArticlePager) getSupportFragmentManager().findFragmentByTag(FRAG_ARTICLE);
-			
+
 			if (ap != null) {
 				Article article = ap.getSelectedArticle();
-				
+
 				if (article != null) {
 					m_menu.findItem(R.id.toggle_marked).setIcon(article.marked ? R.drawable.ic_star :
 						R.drawable.ic_star_outline);
@@ -1375,9 +1310,9 @@ public class OnlineActivity extends CommonActivity {
 							R.drawable.ic_email_open);
 				}
 			}
-			
+
 			HeadlinesFragment hf = (HeadlinesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_HEADLINES);
-				
+
 			if (hf != null && !m_forceDisableActionMode) {
 				if (hf.getSelectedArticles().size() > 0) {
 					if (m_headlinesActionMode == null) {
@@ -1385,7 +1320,7 @@ public class OnlineActivity extends CommonActivity {
 					}
 
 					m_headlinesActionMode.setTitle(String.valueOf(hf.getSelectedArticles().size()));
-				} else if (hf.getSelectedArticles().size() == 0 && m_headlinesActionMode != null) { 
+				} else if (hf.getSelectedArticles().size() == 0 && m_headlinesActionMode != null) {
 					m_headlinesActionMode.finish();
 				}
 			} else if (m_forceDisableActionMode && m_headlinesActionMode != null) {
@@ -1393,43 +1328,43 @@ public class OnlineActivity extends CommonActivity {
             }
 		}
 	}
-	
+
 	protected void refresh(boolean includeHeadlines) {
 		FeedCategoriesFragment cf = (FeedCategoriesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_CATS);
-		
+
 		if (cf != null) {
 			cf.refresh();
 		}
 
 		FeedsFragment ff = (FeedsFragment) getSupportFragmentManager().findFragmentByTag(FRAG_FEEDS);
-		
+
 		if (ff != null) {
 			ff.refresh();
 		}
 
 		if (includeHeadlines) {
 			HeadlinesFragment hf = (HeadlinesFragment) getSupportFragmentManager().findFragmentByTag(FRAG_HEADLINES);
-		
+
 			if (hf != null) {
 				hf.refresh(false);
 			}
-			
+
 			ArticlePager af = (ArticlePager) getSupportFragmentManager().findFragmentByTag(FRAG_ARTICLE);
-			
+
 			if (af != null) {
 				af.refresh(false);
 			}
 		}
 	}
-	
+
 	protected void refresh() {
 		refresh(true);
 	}
-	
+
 	protected class LoginRequest extends ApiRequest {
 		boolean m_refreshAfterLogin = false;
 		OnLoginFinishedListener m_listener;
-		
+
 		public LoginRequest(Context context, boolean refresh, OnLoginFinishedListener listener) {
 			super(context);
 			m_refreshAfterLogin = refresh;
@@ -1441,30 +1376,30 @@ public class OnlineActivity extends CommonActivity {
 			if (result != null) {
 				try {
 					JsonObject content = result.getAsJsonObject();
-					
+
 					if (content != null) {
 						setSessionId(content.get("session_id").getAsString());
-						
+
 						JsonElement apiLevel = content.get("api_level");
 
 						Log.d(TAG, "Authenticated!");
-						
+
 						if (apiLevel != null) {
 							setApiLevel(apiLevel.getAsInt());
 							Log.d(TAG, "Received API level: " + getApiLevel());
-							
+
 							if (m_listener != null) {
 								m_listener.OnLoginSuccess();
 							} else {
 								loginSuccess(m_refreshAfterLogin);
 							}
-							
+
 						} else {
 
 							ApiRequest req = new ApiRequest(m_context) {
 								protected void onPostExecute(JsonElement result) {
 									setApiLevel(0);
-	
+
 									if (result != null) {
 										try {
 											setApiLevel(result.getAsJsonObject().get("level").getAsInt());
@@ -1473,7 +1408,7 @@ public class OnlineActivity extends CommonActivity {
 										}
 									} else if (m_lastError != ApiCommon.ApiError.API_UNKNOWN_METHOD) {
 										// Unknown method means old tt-rss, in that case we assume API 0 and continue
-										
+
 										setLoadingStatus(getErrorMessage());
 
 										if (m_lastErrorMessage != null) {
@@ -1481,24 +1416,24 @@ public class OnlineActivity extends CommonActivity {
 										} else {
 											setLoadingStatus(getErrorMessage());
 										}
-										
+
 										if (m_listener != null) {
 											m_listener.OnLoginFailed();
 										} else {
 											loginFailure();
 										}
-										
+
 										return;
 									}
-	
+
 									Log.d(TAG, "Received API level: " + getApiLevel());
-	
+
 									loginSuccess(m_refreshAfterLogin);
-	
+
 									return;
 								}
 							};
-	
+
 							@SuppressWarnings("serial")
 							HashMap<String, String> map = new HashMap<String, String>() {
 								{
@@ -1506,9 +1441,9 @@ public class OnlineActivity extends CommonActivity {
 									put("op", "getApiLevel");
 								}
 							};
-	
+
 							req.execute(map);
-	
+
 							setLoadingStatus(R.string.loading_message);
 						}
 
@@ -1527,7 +1462,7 @@ public class OnlineActivity extends CommonActivity {
 			} else {
 				setLoadingStatus(getErrorMessage());
 			}
-			
+
 			loginFailure();
 		}
 
@@ -1552,11 +1487,11 @@ public class OnlineActivity extends CommonActivity {
 	public String getViewMode() {
 		return m_prefs.getString("view_mode", "adaptive");
 	}
-	
+
 	public void setLastContentImageHitTestUrl(String url) {
-		m_lastImageHitTestUrl = url;		
+		m_lastImageHitTestUrl = url;
 	}
-	
+
 	public String getLastContentImageHitTestUrl() {
 		return m_lastImageHitTestUrl;
 	}
