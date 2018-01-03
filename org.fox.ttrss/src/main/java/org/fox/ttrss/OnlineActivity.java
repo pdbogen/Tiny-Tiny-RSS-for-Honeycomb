@@ -459,11 +459,6 @@ public class OnlineActivity extends CommonActivity {
 				}
 			}
 			return true;
-		case R.id.donate:
-			if (true) {
-				openUnlockUrl();
-			}
-			return true;
 		/*case R.id.logout:
 			logout();
 			return true;*/
@@ -1036,17 +1031,6 @@ public class OnlineActivity extends CommonActivity {
 		m_menu = menu;
 
 		initMenu();
-
-		List<PackageInfo> pkgs = getPackageManager()
-				.getInstalledPackages(0);
-
-		for (PackageInfo p : pkgs) {
-			if ("org.fox.ttrss.key".equals(p.packageName)) {
-				Log.d(TAG, "license apk found");
-				menu.findItem(R.id.donate).setVisible(false);
-				break;
-			}
-		}
 
 		return true;
 	}
